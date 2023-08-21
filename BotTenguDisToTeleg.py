@@ -2,9 +2,14 @@ from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from discord.ext import commands
+import random
 import discord
 
+# Создаем соединение с базой данных
+engine = create_engine('sqlite:///contacts.db')
 Base = declarative_base()
+Session = sessionmaker(bind=engine)
+session = Session()
 
 class Contact(Base):
     __tablename__ = 'contacts'
@@ -13,17 +18,15 @@ class Contact(Base):
     discord_id = Column(String)
     role = Column(String)
     telegram_id = Column(String)
+    def __repr__(self):
+        return f"<User(name='{self.name}', role='{self.role}', telegram_contacts='{self.telegram_contacts}')>"
 
-# Создаем соединение с базой данных
-engine = create_engine('sqlite:///contacts.db')
-Base = declarative_base()
-Session = sessionmaker(bind=engine)
-session = Session()
+Base.metadata.create_all(engine)
 
 # определяем intest согласно документации discord.py 
 intents = discord.Intents.default()
-intents.members = True
-bot = commands.Bot(command_prefix='*', intents=intents)
+intents.message_content = True
+bot = commands.Bot(command_prefix='>', intents=intents)
 
 
 @bot.command()
@@ -33,7 +36,8 @@ async def hello(ctx):
 @bot.command()
 async def HowUFeel(ctx):
     responses = ['Good', 'Excellent', 'Too sunny today']
-    await ctx.send(f'Feeling: {random.choice(responses)}')
+    chosen_response = random.choice(responses)
+    await ctx.send(f'Feeling: {chosen_response}')
 
 @bot.command()
 async def add_user(ctx, discord_id: str, role: str, telegram_id: str):
@@ -50,7 +54,8 @@ async def View_BD(ctx):
 
 @bot.command()
 async def shutdown(ctx):
-    await bot.logout()
+    await ctx.send("Shutting down...")
+    await bot.close()
 
-bot.run('MTA5ODE1NzE0NTg0Mjc5NDU0Ng.GDfkgn.tIG-_dkmUy1wu7BSbNNJ-lwvkEDKjj9-0FopHk')
+bot.run('MTA5ODE1NzE0NTg0Mjc5NDU0Ng.GbtasR.CPeQ8djg-uJuGZwuzvkoOynvOwt8tM2T_phRwE')
 
