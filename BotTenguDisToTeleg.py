@@ -1,73 +1,56 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from discord.ext import commands
 import discord
 
-engine = create_engine('sqlite:///mydatabase.db')
+Base = declarative_base()
+
+class Contact(Base):
+    __tablename__ = 'contacts'
+
+    id = Column(Integer, primary_key=True)
+    discord_id = Column(String)
+    role = Column(String)
+    telegram_id = Column(String)
+
+# Создаем соединение с базой данных
+engine = create_engine('sqlite:///contacts.db')
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
-
-class User(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    role = Column(String)
-    telegram_contacts = Column(String)
-
-    def __repr__(self):
-        return f"<User(name='{self.name}', role='{self.role}', telegram_contacts='{self.telegram_contacts}')>"
-
-Base.metadata.create_all(engine)
 
 # определяем intest согласно документации discord.py 
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='*', intents=intents)
 
-@bot.command()
-async def telegram(ctx, user):
-    user_data = session.query(User).filter_by(name=user).first()
-    if user_data:
-        await ctx.send(f"User: {user_data.name}\nRole: {user_data.role}\nTelegram contacts: {user_data.telegram_contacts}")
-    else:
-        await ctx.send("User not found")
 
 @bot.command()
-async def all_users(ctx):
-    all_users_data = session.query(User).all()
-    if all_users_data:
-        for user_data in all_users_data:
-            await ctx.send(f"User: {user_data.name}, Role: {user_data.role}, Telegram contacts: {user_data.telegram_contacts}")
-    else:
-        await ctx.send("No users found")
+async def hello(ctx):
+    await ctx.send(f'Hello, {ctx.author.mention}!')
 
 @bot.command()
-async def add_user(ctx, name, role, telegram_contacts):
-    new_user = User(name=name, role=role, telegram_contacts=telegram_contacts)
-    session.add(new_user)
+async def HowUFeel(ctx):
+    responses = ['Good', 'Excellent', 'Too sunny today']
+    await ctx.send(f'Feeling: {random.choice(responses)}')
+
+@bot.command()
+async def add_user(ctx, discord_id: str, role: str, telegram_id: str):
+    new_contact = Contact(discord_id=discord_id, role=role, telegram_id=telegram_id)
+    session.add(new_contact)
     session.commit()
-    await ctx.send(f"New user added: {name}")
+    await ctx.send(f'Contact added: Discord ID - {discord_id}, Role - {role}, Telegram ID - {telegram_id}')
 
-#@bot.command()
-#async def remove(ctx, user: discord.User):
-#    session = Session()
-#
- #   try:
-#        # Ищем пользователя в базе данных
-#        db_user = session.query(User).filter_by(id=user.id).one()
-#
- #       # Удаляем пользователя из базы данных
- #       session.delete(db_user)
- #       session.commit()
+@bot.command()
+async def View_BD(ctx):
+    contacts = session.query(Contact).all()
+    response = '\n'.join([f'Discord ID: {contact.discord_id}, Role: {contact.role}, Telegram ID: {contact.telegram_id}' for contact in contacts])
+    await ctx.send(response)
 
- #       await ctx.send(f"User {user.name} has been removed from the database.")
- #   except NoResultFound:
-#        await ctx.send(f"User {user.name} is not in the database.")
-#    finally:
-        
-#        session.close()
+@bot.command()
+async def shutdown(ctx):
+    await bot.logout()
 
-bot.run('MTA5ODE1NzE0NTg0Mjc5NDU0Ng.Gp4a9W.gdwBa1IXc20HK1D9xrhcr8-L0mCnTNvGnPxfo4')
+bot.run('MTA5ODE1NzE0NTg0Mjc5NDU0Ng.GDfkgn.tIG-_dkmUy1wu7BSbNNJ-lwvkEDKjj9-0FopHk')
+
