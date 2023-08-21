@@ -51,23 +51,23 @@ async def add_user(ctx, name, role, telegram_contacts):
     session.commit()
     await ctx.send(f"New user added: {name}")
 
-@bot.command()
-async def remove(ctx, user: discord.User):
-    session = Session()
+#@bot.command()
+#async def remove(ctx, user: discord.User):
+#    session = Session()
+#
+ #   try:
+#        # »щем пользовател€ в базе данных
+#        db_user = session.query(User).filter_by(id=user.id).one()
+#
+ #       # ”дал€ем пользовател€ из базы данных
+ #       session.delete(db_user)
+ #       session.commit()
 
-    try:
-        # »щем пользовател€ в базе данных
-        db_user = session.query(User).filter_by(id=user.id).one()
-
-        # ”дал€ем пользовател€ из базы данных
-        session.delete(db_user)
-        session.commit()
-
-        await ctx.send(f"User {user.name} has been removed from the database.")
-    except NoResultFound:
-        await ctx.send(f"User {user.name} is not in the database.")
-    finally:
+ #       await ctx.send(f"User {user.name} has been removed from the database.")
+ #   except NoResultFound:
+#        await ctx.send(f"User {user.name} is not in the database.")
+#    finally:
         
-        session.close()
+#        session.close()
 
-bot.run('Token')
+bot.run('MTA5ODE1NzE0NTg0Mjc5NDU0Ng.Gp4a9W.gdwBa1IXc20HK1D9xrhcr8-L0mCnTNvGnPxfo4')
