@@ -23,7 +23,7 @@ class Contact(Base):
 
 Base.metadata.create_all(engine)
 
-# определяем intest согласно документации discord.py 
+# определяем intents согласно документации discord
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='>', intents=intents)
@@ -39,18 +39,56 @@ async def HowUFeel(ctx):
     chosen_response = random.choice(responses)
     await ctx.send(f'Feeling: {chosen_response}')
 
+# В начале кода создаем пустой список для буферизации
+buffered_contacts = []
+
+# Изменяем функцию add_user
 @bot.command()
 async def add_user(ctx, discord_id: str, role: str, telegram_id: str):
     new_contact = Contact(discord_id=discord_id, role=role, telegram_id=telegram_id)
-    session.add(new_contact)
-    session.commit()
-    await ctx.send(f'Contact added: Discord ID - {discord_id}, Role - {role}, Telegram ID - {telegram_id}')
+    buffered_contacts.append(new_contact)
+
+    # Проверяем размер буфера и добавляем в БД, если он достиг определенного размера
+    if len(buffered_contacts) >= 10:  # или другое число, которое вам подходит
+        try:
+            session.add_all(buffered_contacts)
+            session.commit()
+            buffered_contacts.clear()
+            await ctx.send("Buffered contacts have been committed to the database.")
+        except Exception as e:
+            session.rollback()
+            await ctx.send(f"An error occurred while committing buffered contacts: {e}")
+
+    await ctx.send(f'Contact buffered: Discord ID - {discord_id}, Role - {role}, Telegram ID - {telegram_id}')
+
+# Новая команда для принудительного сохранения буферизованных контактов
+@bot.command()
+async def flush_buffer(ctx):
+    if buffered_contacts:
+        try:
+            session.add_all(buffered_contacts)
+            session.commit()
+            buffered_contacts.clear()
+            await ctx.send("Buffered contacts have been committed to the database.")
+        except Exception as e:
+            session.rollback()
+            await ctx.send(f"An error occurred while committing buffered contacts: {e}")
+    else:
+        await ctx.send("No buffered contacts to commit.")
+
 
 @bot.command()
 async def view_db(ctx):
-    contacts = session.query(Contact).all()
-    response = '\n'.join([f'Discord ID: {contact.discord_id}, Role: {contact.role}, Telegram ID: {contact.telegram_id}' for contact in contacts])
-    await ctx.send(response)
+    try:
+        contacts = session.query(Contact).all()
+        if not contacts:
+            await ctx.send("The database is empty.")
+            return
+        response = '\n'.join([f'Discord ID: {contact.discord_id}, Role: {contact.role}, Telegram ID: {contact.telegram_id}' for contact in contacts])
+        await ctx.send(response)
+    except Exception as e:
+        await ctx.send(f"An error occurred: {e}")
+
 
 @bot.command()
 async def shutdown(ctx):
